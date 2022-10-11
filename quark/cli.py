@@ -21,7 +21,6 @@ from quark.utils.pprint import print_info, print_success, print_warning
 from quark.utils.weight import Weight
 from quark.webreport.generate import ReportGenerator
 
-
 logo()
 
 
