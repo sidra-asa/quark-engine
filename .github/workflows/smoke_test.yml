@@ -26,10 +26,10 @@ jobs:
         python-version: [3.8, 3.9]
 
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
 
     - name: Set up Python
-      uses: actions/setup-python@v2
+      uses: actions/setup-python@v4
       with:
         python-version: ${{ matrix.python-version }}
 
@@ -38,15 +38,14 @@ jobs:
         python -m pip install --upgrade pip
         python -m pip install ciphey frida objection
         python -m pip install black pytest sphinx sphinx-rtd-theme
-
         # Install click >= 8.0.0 for CLI supports
         python -m pip install click==8.0.3
 
-    - run: sudo apt-get -y install graphviz
+    - run: sudo apt-get -y install graphviz ninja-build
       if: matrix.os == 'ubuntu-latest'
-    - run: brew install graphviz
+    - run: brew install graphviz ninja
       if: matrix.os == 'macOS-latest'
-    - run: choco install graphviz
+    - run: choco install graphviz ninja
       if: matrix.os == 'windows-latest'
 
     - name: Install Quark-Engine
@@ -68,14 +67,12 @@ jobs:
         quark -a apk-malware-samples/14d9f1a92dd984d6040cc41ed06e273e.apk -s -g
         quark -a apk-malware-samples/14d9f1a92dd984d6040cc41ed06e273e.apk -d -g
         quark -a apk-malware-samples/14d9f1a92dd984d6040cc41ed06e273e.apk -s -c
-
     - name: Check Accuracy
       shell: bash
       run: |
         echo "Ahmyth_RESULT=$(quark -a apk-malware-samples/Ahmyth.apk -s -t 100 | grep 100% | wc -l | awk '{print $1}')" >> $GITHUB_ENV
         echo "a4db_RESULT=$(quark -a apk-malware-samples/13667fe3b0ad496a0cd157f34b7e0c991d72a4db.apk -s -t 100 | grep 100% | wc -l | awk '{print $1}')" >> $GITHUB_ENV
         echo "e273e_RESULT=$(quark -a apk-malware-samples/14d9f1a92dd984d6040cc41ed06e273e.apk -s -t 100 | grep 100% | wc -l | awk '{print $1}')" >> $GITHUB_ENV
-
     - name: Check Ahmyt Result
       shell: bash
       # This sample should have 16 behaviors with 100% confidence
@@ -85,7 +82,6 @@ jobs:
         else
           exit 1
         fi
-
     - name: Check 13667fe3b0ad496a0cd157f34b7e0c991d72a4db.apk Result
       shell: bash
       # This sample should have 11 behaviors with 100% confidence
@@ -95,7 +91,6 @@ jobs:
         else
           exit 1
         fi
-
     - name: Check 14d9f1a92dd984d6040cc41ed06e273e.apk Result
       shell: bash
       # This sample should have 15 behaviors with 100% confidence

@@ -8,6 +8,9 @@ black = "*"
 pytest = "*"
 sphinx = "*"
 sphinx-rtd-theme = "*"
+pytest-cov = "*"
+coveralls = "*"
+codecov = "*"
 
 [packages]
 prettytable = "<=2.4.0"
