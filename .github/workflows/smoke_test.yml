@@ -38,9 +38,9 @@ jobs:
         # python -m pip install --upgrade pip
         python -m pip install pipenv
         # python -m pip install ciphey frida objection
-        pipenv install --verbose --dev --skip-lock
+        pipenv install --dev --skip-lock
         # python -m pip install black pytest sphinx sphinx-rtd-theme
-        pipenv install --verbose black pytest sphinx sphinx-rtd-theme
+        pipenv install black pytest sphinx sphinx-rtd-theme
         # Install click >= 8.0.0 for CLI supports
         # python -m pip install click==8.0.3
 
@@ -53,8 +53,8 @@ jobs:
 
     - name: Install Quark-Engine
       run: |
-        pipenv run --verbose setup.py build
-        pipenv run --verbose setup.py install
+        pipenv run python setup.py build
+        pipenv run python setup.py install
 
     # Download the latest rule set
     - name: Download rule from https://github.com/quark-engine/quark-rules
@@ -65,8 +65,8 @@ jobs:
       run: |
         pipenv run --verbose quark --help
         git clone https://github.com/quark-engine/apk-malware-samples
-        pipenv run --verbose quark -a apk-malware-samples/14d9f1a92dd984d6040cc41ed06e273e.apk -s
-        pipenv run --verbose quark -a apk-malware-samples/14d9f1a92dd984d6040cc41ed06e273e.apk -d
+        pipenv run quark -a apk-malware-samples/14d9f1a92dd984d6040cc41ed06e273e.apk -s
+        pipenv run quark -a apk-malware-samples/14d9f1a92dd984d6040cc41ed06e273e.apk -d
         pipenv run quark -a apk-malware-samples/14d9f1a92dd984d6040cc41ed06e273e.apk -s -g
         pipenv run quark -a apk-malware-samples/14d9f1a92dd984d6040cc41ed06e273e.apk -d -g
         pipenv run quark -a apk-malware-samples/14d9f1a92dd984d6040cc41ed06e273e.apk -s -c

@@ -48,7 +48,7 @@ jobs:
         
     - name: Test with pytest
       run: |
-        # pipenv install pytest-cov ciphey frida --skip-lock
+        pipenv install pytest-cov ciphey frida --skip-lock
         pipenv run pytest --cov=. --cov-report=xml
 
     - name: Upload coverage to Codecov
