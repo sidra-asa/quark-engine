@@ -6,6 +6,7 @@ name = "pypi"
 [packages]
 frida = "*"
 quark-engine = {editable = true, path = "."}
+click = ">=8.0.0"
 
 [dev-packages]
 sphinx = "*"

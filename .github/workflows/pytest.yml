@@ -22,7 +22,7 @@ jobs:
         python-version: 3.8
         cache: 'pipenv'
         cache-dependency-path: |
-          **/Pipfile.lock
+          **/Pipfile
 
     - name: Install pipenv
       run: |
@@ -30,9 +30,9 @@ jobs:
 
     - name: Install dependencies
       run: |
-        # pipenv install --dev --skip-lock
-        pipenv run pip install git+https://github.com/Ciphey/Ciphey.git@aec8a74#egg=ciphey
-        pipenv sync
+        pipenv install --dev --skip-lock
+        # pipenv run pip install git+https://github.com/Ciphey/Ciphey.git@aec8a74#egg=ciphey
+        # pipenv sync
         pip install meson==0.62.0 ninja
         # sudo apt-get install ninja-build
 
