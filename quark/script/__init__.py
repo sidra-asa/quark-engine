@@ -2,6 +2,7 @@
 # This file is part of Quark-Engine - https://github.com/quark-engine/quark-engine
 # See the file 'LICENSE' for copying permission.
 
+import re
 import functools
 from os import PathLike
 from os.path import abspath, isfile, join
@@ -50,7 +51,7 @@ class DefaultRuleset(Ruleset):
         return super().__getitem__(f"{key:05}.json")
 
 
-DEFAULT_RULESET = DefaultRuleset(join(QUARK_RULE_PATH, "rules"))
+DEFAULT_RULESET = DefaultRuleset(QUARK_RULE_PATH)
 
 
 class Activity:
@@ -214,6 +215,31 @@ class Method:
         :return: the string of the method descriptor
         """
         return self.innerObj.descriptor
+
+    def isUsedBy(self, package: str) -> bool:
+        """Check if this method is called by the method in main package.
+
+        :param package: package name. e.g. Landroidx
+        :return: True/False
+        """
+        classStyle = re.compile(r"^L([a-zA-Z0-9]+){1}(\/.*)?")
+        if not classStyle.match(package):
+            package = package.replace(".", "/")
+            package = f"L{package}"
+
+        methodCallers = self.getXrefFrom()
+        for caller in methodCallers:
+            if caller.className.startswith(package):
+                return True
+
+            # Skip the recursive function call
+            methodCallers += [
+                callerParent
+                for callerParent in caller.getXrefFrom()
+                if callerParent != caller and callerParent not in methodCallers
+            ]
+
+        return False
 
 
 class Behavior:
