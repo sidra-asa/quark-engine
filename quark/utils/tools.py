@@ -53,7 +53,6 @@ def descriptor_to_androguard_format(descriptor):
     parentheses
     :return: a descriptor with arguments separated by spaces
     """
-
     if "(" not in descriptor or ")" not in descriptor:
         raise ValueError(f"Invalid descriptor. {descriptor}")
 
