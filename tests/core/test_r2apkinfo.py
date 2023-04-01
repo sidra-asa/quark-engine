@@ -1,4 +1,4 @@
-from quark.core.rzapkinfo import RizinImp
+from quark.core.r2apkinfo import R2Imp
 
 
 OPS = [
@@ -26,10 +26,10 @@ OPS = [
 ]
 
 
-class TestRzApkinfo:
+class TestR2Apkinfo:
 
     @staticmethod
     def test_parse_parameter():
         for op in OPS:
-            parsed_param = RizinImp._parse_parameter(op.get("parameter"))
+            parsed_param = R2Imp._parse_parameter(op.get("parameter"))
             assert isinstance(parsed_param, op.get("expect_type"))
