@@ -23,7 +23,7 @@ from quark.utils.tools import (
     remove_dup_list,
 )
 
-R2Cache = namedtuple("r2_cache", "address dexindex is_imported")
+R2Cache = namedtuple("r2_cache", "address is_imported")
 
 PRIMITIVE_TYPE_MAPPING = {
     "void": "V",
@@ -37,7 +37,6 @@ PRIMITIVE_TYPE_MAPPING = {
     "double": "D",
 }
 
-# R2_ESCAPE_CHAR_LIST = ["<", ">", "$"]
 R2_ESCAPE_CHAR_LIST = ["$"]
 
 
@@ -78,7 +77,7 @@ class R2Imp(BaseApkinfo):
         self._number_of_dex = len(self._dex_list)
 
     @functools.lru_cache
-    def _get_r2(self, index):
+    def _get_r2(self):
         """
         Return a R2 object that opens the specified Dex file.
 
@@ -86,7 +85,11 @@ class R2Imp(BaseApkinfo):
         object open
         :return: a R2 object opening the specified Dex file
         """
-        r2 = r2pipe.open(self._dex_list[index])
+        if self.ret_type == "DEX":
+            r2 = r2pipe.open(self._dex_list[0])
+        elif self.ret_type == "APK":
+            r2 = r2pipe.open(f"apk://{self.apk_filepath}")
+
         r2.cmd("aa")
         return r2
 
@@ -125,7 +128,6 @@ class R2Imp(BaseApkinfo):
             raw_type = raw_type.replace("_", "$")
             return "L" + raw_type + ";"
 
-        # return "Ljava/lang/" + raw_type + ";"
         return raw_type + ";"
 
     @staticmethod
@@ -142,7 +144,7 @@ class R2Imp(BaseApkinfo):
             raw_str = raw_str.replace(c, "_")
         return raw_str
 
-    def _parse_method_from_isj_obj(self, json_obj, dexindex):
+    def _parse_method_from_isj_obj(self, json_obj):
         """
         Parse a JSON object provided by the R2 command `isj` or `is.j` into
         an instance of MethodObject.
@@ -188,13 +190,13 @@ class R2Imp(BaseApkinfo):
             class_name=class_name,
             name=method_name,
             descriptor=descriptor,
-            cache=R2Cache(json_obj["vaddr"], dexindex, is_imported),
+            cache=R2Cache(json_obj["vaddr"], is_imported),
         )
 
         return method
 
     @functools.lru_cache
-    def _get_methods_classified(self, dexindex):
+    def _get_methods_classified(self):
         """
         Parse all methods in the specified Dex and convert them into a
         dictionary. The dictionary takes their belonging classes as the keys.
@@ -205,12 +207,12 @@ class R2Imp(BaseApkinfo):
         :return: a dictionary taking a class name as the key and a list of
         MethodObject as the corresponding value.
         """
-        r2 = self._get_r2(dexindex)
+        r2 = self._get_r2()
 
         method_json_list = r2.cmdj("isj")
         method_dict = defaultdict(list)
         for json_obj in method_json_list:
-            method = self._parse_method_from_isj_obj(json_obj, dexindex)
+            method = self._parse_method_from_isj_obj(json_obj)
 
             if method:
                 method_dict[method.class_name].append(method)
@@ -306,7 +308,7 @@ class R2Imp(BaseApkinfo):
         """
         method_set = set()
         for dex_index in range(self._number_of_dex):
-            for method_list in self._get_methods_classified(dex_index).values():
+            for method_list in self._get_methods_classified().values():
                 method_set.update(method_list)
 
         return method_set
@@ -354,13 +356,13 @@ class R2Imp(BaseApkinfo):
 
         if class_name != ".*":
             for dex_index in dex_list:
-                method_dict = self._get_methods_classified(dex_index)
+                method_dict = self._get_methods_classified()
                 filtered_methods += list(
                     filter(method_filter, method_dict[class_name])
                 )
         else:
             for dex_index in dex_list:
-                method_dict = self._get_methods_classified(dex_index)
+                method_dict = self._get_methods_classified()
                 for key_name in method_dict:
                     filtered_methods += list(
                         filter(method_filter, method_dict[key_name])
@@ -380,10 +382,9 @@ class R2Imp(BaseApkinfo):
         """
         cache = method_object.cache
 
-        r2 = self._get_r2(cache.dexindex)
+        r2 = self._get_r2()
 
-        xrefs = r2.cmdj(f"axtj @ {cache.address}")
-
+        xrefs = r2.cmdj(f"axlj @ {cache.address}")
         upperfunc_set = set()
         for xref in xrefs:
             if xref["type"] != "CALL":
@@ -421,8 +422,7 @@ class R2Imp(BaseApkinfo):
         """
         cache = method_object.cache
 
-        r2 = self._get_r2(cache.dexindex)
-
+        r2 = self._get_r2()
         instruct_flow = r2.cmdj(f"pdfj @ {cache.address}")["ops"]
 
         lowerfunc_list = []
@@ -462,7 +462,7 @@ class R2Imp(BaseApkinfo):
         cache = method_object.cache
         if not cache.is_imported:
 
-            r2 = self._get_r2(cache.dexindex)
+            r2 = self._get_r2()
 
             instruct_flow = r2.cmdj(f"pdfj @ {cache.address}")["ops"]
             if instruct_flow:
@@ -480,13 +480,12 @@ class R2Imp(BaseApkinfo):
         :return: a set of strings
         """
         strings = set()
-        for dex_index in range(self._number_of_dex):
-            r2 = self._get_r2(dex_index)
+        r2 = self._get_r2()
 
-            string_detail_list = r2.cmdj("izzj")
-            strings.update(
-                [string_detail["string"] for string_detail in string_detail_list]
-            )
+        string_detail_list = r2.cmdj("izzj")
+        strings.update(
+            [string_detail["string"] for string_detail in string_detail_list]
+        )
 
         return strings
 
@@ -536,7 +535,7 @@ class R2Imp(BaseApkinfo):
         if cache.is_imported:
             return {}
 
-        r2 = self._get_r2(cache.dexindex)
+        r2 = self._get_r2()
 
         instruction_flow = r2.cmdj(f"pdfj @ {cache.address}")["ops"]
 
@@ -587,18 +586,16 @@ class R2Imp(BaseApkinfo):
         """
         hierarchy_dict = defaultdict(set)
 
-        for dex_index in range(self._number_of_dex):
+        r2 = self._get_r2()
 
-            r2 = self._get_r2(dex_index)
+        class_info_list = r2.cmdj("icj")
+        for class_info in class_info_list:
+            class_name = class_info["classname"]
+            class_name = self._convert_type_to_type_signature(class_name)
+            super_classes = class_info["super"]
 
-            class_info_list = r2.cmdj("icj")
-            for class_info in class_info_list:
-                class_name = class_info["classname"]
-                class_name = self._convert_type_to_type_signature(class_name)
-                super_classes = class_info["super"]
-
-                for super_class in super_classes:
-                    hierarchy_dict[class_name].add(super_class)
+            for super_class in super_classes:
+                hierarchy_dict[class_name].add(super_class)
 
         return hierarchy_dict
 
@@ -616,16 +613,14 @@ class R2Imp(BaseApkinfo):
         """
         hierarchy_dict = defaultdict(set)
 
-        for dex_index in range(self._number_of_dex):
+        r2 = self._get_r2()
 
-            r2 = self._get_r2(dex_index)
+        class_info_list = r2.cmdj("icj")
+        for class_info in class_info_list:
+            class_name = class_info["classname"]
+            super_class = class_info["super"]
 
-            class_info_list = r2.cmdj("icj")
-            for class_info in class_info_list:
-                class_name = class_info["classname"]
-                super_class = class_info["super"]
-
-                hierarchy_dict[super_class].add(class_name)
+            hierarchy_dict[super_class].add(class_name)
 
         return hierarchy_dict
 
@@ -636,14 +631,12 @@ class R2Imp(BaseApkinfo):
         :param address: an address used to find the corresponding method
         :return: the MethodObject of the method in the given address
         """
-        dexindex = 0
-
-        r2 = self._get_r2(dexindex)
+        r2 = self._get_r2()
         json_data = r2.cmdj(f"is.j @ {address}")
         json_data = json_data.get("symbols")
 
         if json_data:
-            return self._parse_method_from_isj_obj(json_data, dexindex)
+            return self._parse_method_from_isj_obj(json_data)
         else:
             return None
 
@@ -654,9 +647,7 @@ class R2Imp(BaseApkinfo):
         :param address: an address used to find the corresponding method
         :return: the content in the given address
         """
-        dexindex = 0
-
-        r2 = self._get_r2(dexindex)
+        r2 = self._get_r2()
         content = r2.cmd(f"pr @ {int(address, 16)}")
         return content
 
