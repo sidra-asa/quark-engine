@@ -237,3 +237,167 @@ Here is the flowchart of ``find_api_usage``.
                 method_list.append(method)
 
         return method_list
+        
+_evaluate_method
+=====================
+
+**The algorithm of _evaluate_method**
+
+The ``_evaluate_method`` method evaluates the execution of opcodes in the target method and returns a matrix representing the usage of each involved register. The method takes one parameter, method, which is the method to be evaluated.
+
+Here is the process of ``_evaluate_method``.
+
+.. code-block:: TEXT
+
+    1. Create a PyEval object with the apkinfo attribute of the instance. PyEval is presumably
+    a class that handles the evaluation of opcodes.
+
+    2. Loop through the bytecode objects in the target method by calling the get_method_bytecode 
+    method of the apkinfo attribute.
+
+    3. Extract the mnemonic (opcode), registers, and parameter from the bytecode_obj and create 
+    an instruction list containing these elements.
+
+    4. Convert all elements of the instruction list to strings (in case there are MUTF8String objects).
+
+    5. Check if the opcode (the first element of instruction) is in the eval dictionary of the pyeval object. 
+        - If it is, call the corresponding function with the instruction as its argument.
+
+    6. Once the loop is finished, call the show_table method of the pyeval object to return the 
+    matrix representing the usage of each involved register.
+
+Here is the flowchart of ``_evaluate_method``.
+
+.. image:: https://i.imgur.com/XCKrjjR.jpg
+      
+**The code of _evaluate_method**
+
+.. code-block:: python
+
+    def _evaluate_method(self, method) -> List[List[str]]:
+        """
+        Evaluate the execution of the opcodes in the target method and return
+         the usage of each involved register.
+        :param method: Method to be evaluated
+        :return: Matrix that holds the usage of the registers
+        """
+        pyeval = PyEval(self.apkinfo)
+
+        for bytecode_obj in self.apkinfo.get_method_bytecode(method):
+            # ['new-instance', 'v4', Lcom/google/progress/SMSHelper;]
+            instruction = [bytecode_obj.mnemonic]
+            if bytecode_obj.registers is not None:
+                instruction.extend(bytecode_obj.registers)
+            if bytecode_obj.parameter is not None:
+                instruction.append(bytecode_obj.parameter)
+
+            # for the case of MUTF8String
+            instruction = [str(x) for x in instruction]
+
+            if instruction[0] in pyeval.eval.keys():
+                pyeval.eval[instruction[0]](instruction)
+
+        return pyeval.show_table()
+
+check_parameter_on_single_method
+=======================================
+
+**The algorithm of check_parameter_on_single_method**
+
+The ``check_parameter_on_single_method`` function checks whether two methods use the same parameter.
+
+Here is the process of ``check_parameter_on_single_method``.
+
+.. code-block:: TEXT
+
+    1. Define a method named check_parameter_on_single_method, which takes 5 parameters:
+        * self: a reference to the current object, indicating that this method is defined in a class
+        * usage_table: a table for storing the usage of called functions
+        * first_method: the first API or the method calling the first API
+        * second_method: the second API or the method calling the second API
+        * keyword_item_list: a list of keywords used to determine if the parameter meets specific conditions
+
+    2. Define a Boolean variable regex, which is set to False by default.
+
+    3. Obtain the patterns of first_method and second_method based on the given input, and store them in 
+    first_method_pattern and second_method_pattern, respectively.
+
+    4. Define a generator matched_records. Use the filter function to filter register_usage_records to 
+    include only those matched records used by both first_method and second_method.
+
+    5. Use a for loop to process the matched records one by one.
+
+    6. Call method check_parameter_values to check if the matched records contain keywords in keyword_item_list. 
+        - If True, add matched keywords to matched_keyword_list.
+        - If False, leave matched_keyword_list empty.
+
+    7. Use yield to return the matched record and matched_keyword_list. This method is a generator that processes 
+    data and returns results at the same time.
+
+Here is the flowchart of ``check_parameter_on_single_method``
+
+.. image:: https://i.imgur.com/BJf7oSg.png
+
+**The code of check_parameter_on_single_method**
+
+.. code:: python
+
+    def check_parameter_on_single_method(
+        self,
+        usage_table,
+        first_method,
+        second_method,
+        keyword_item_list=None,
+        regex=False,
+    ) -> Generator[Tuple[str, List[str]], None, None]:
+        """Check the usage of the same parameter between two method.
+
+        :param usage_table: the usage of the involved registers
+        :param first_method: the first API or the method calling the first APIs
+        :param second_method: the second API or the method calling the second
+         APIs
+        :param keyword_item_list: keywords required to be present in the usage
+         , defaults to None
+        :param regex: treat the keywords as regular expressions, defaults to
+         False
+        :yield: _description_
+        """
+        first_method_pattern = PyEval.get_method_pattern(
+            first_method.class_name, first_method.name, first_method.descriptor
+        )
+
+        second_method_pattern = PyEval.get_method_pattern(
+            second_method.class_name,
+            second_method.name,
+            second_method.descriptor,
+        )
+
+        register_usage_records = (
+            c_func
+            for table in usage_table
+            for val_obj in table
+            for c_func in val_obj.called_by_func
+        )
+
+        matched_records = filter(
+            lambda r: first_method_pattern in r and second_method_pattern in r,
+            register_usage_records,
+        )
+
+        for record in matched_records:
+            if keyword_item_list and list(keyword_item_list):
+                matched_keyword_list = self.check_parameter_values(
+                    record,
+                    (first_method_pattern, second_method_pattern),
+                    keyword_item_list,
+                    regex,
+                )
+
+                if matched_keyword_list:
+                    yield (record, matched_keyword_list)
+
+            else:
+                yield (record, None)
+
+
+
