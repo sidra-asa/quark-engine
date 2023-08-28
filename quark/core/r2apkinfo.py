@@ -307,9 +307,8 @@ class R2Imp(BaseApkinfo):
         :return: a set of MethodObjects
         """
         method_set = set()
-        for dex_index in range(self._number_of_dex):
-            for method_list in self._get_methods_classified().values():
-                method_set.update(method_list)
+        for method_list in self._get_methods_classified().values():
+            method_set.update(method_list)
 
         return method_set
 
@@ -351,22 +350,19 @@ class R2Imp(BaseApkinfo):
                 descriptor, method.descriptor
             )
 
-        dex_list = range(self._number_of_dex)
         filtered_methods = list()
 
         if class_name != ".*":
-            for dex_index in dex_list:
-                method_dict = self._get_methods_classified()
-                filtered_methods += list(
-                    filter(method_filter, method_dict[class_name])
-                )
+            method_dict = self._get_methods_classified()
+            filtered_methods += list(
+                filter(method_filter, method_dict[class_name])
+            )
         else:
-            for dex_index in dex_list:
-                method_dict = self._get_methods_classified()
-                for key_name in method_dict:
-                    filtered_methods += list(
-                        filter(method_filter, method_dict[key_name])
-                    )
+            method_dict = self._get_methods_classified()
+            for key_name in method_dict:
+                filtered_methods += list(
+                    filter(method_filter, method_dict[key_name])
+                )
 
         return filtered_methods
 

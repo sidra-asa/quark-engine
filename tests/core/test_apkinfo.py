@@ -38,6 +38,20 @@ def apkinfo(request, apk_path):
     yield apkinfo
 
 
+@pytest.fixture(
+    scope="function",
+    params=((AndroguardImp), (RizinImp)),
+)
+def apkinfo2(request, apk_path):
+    """Since R2 has some issue,
+    create this function to skip R2 relevant test for some test functions.
+    """
+    Apkinfo, apk_path = request.param, apk_path
+    apkinfo = Apkinfo(apk_path)
+
+    yield apkinfo
+
+
 @pytest.fixture(scope="function")
 def dex_file():
     APK_SOURCE = (
@@ -291,7 +305,8 @@ class TestApkinfo:
         assert isinstance(result, list)
         assert expect_method in result
 
-    def test_upperfunc(self, apkinfo):
+    def test_upperfunc(self, apkinfo2):
+        apkinfo = apkinfo2
         api = apkinfo.find_method(
             "Lcom/example/google/service/ContactsHelper;",
             "<init>",
@@ -308,7 +323,8 @@ class TestApkinfo:
 
         assert expect_function in upper_methods
 
-    def test_lowerfunc(self, apkinfo):
+    def test_lowerfunc(self, apkinfo2):
+        apkinfo = apkinfo2
         method = apkinfo.find_method(
             "Lcom/example/google/service/WebServiceCalling;",
             "Send",
@@ -326,7 +342,8 @@ class TestApkinfo:
 
         assert (expect_method, expect_offset) in upper_methods
 
-    def test_get_method_bytecode(self, apkinfo):
+    def test_get_method_bytecode(self, apkinfo2):
+        apkinfo = apkinfo2
         expected_bytecode_list = [
             BytecodeObject(
                 "iput-object",
@@ -366,7 +383,8 @@ class TestApkinfo:
         for expected in expected_bytecode_list:
             assert expected in bytecodes
 
-    def test_lowerfunc(self, apkinfo):
+    def test_lowerfunc(self, apkinfo2):
+        apkinfo = apkinfo2
         method = apkinfo.find_method(
             "Lcom/example/google/service/SMSReceiver;",
             "isContact",
