@@ -323,25 +323,6 @@ class TestApkinfo:
 
         assert expect_function in upper_methods
 
-    def test_lowerfunc(self, apkinfo2):
-        apkinfo = apkinfo2
-        method = apkinfo.find_method(
-            "Lcom/example/google/service/WebServiceCalling;",
-            "Send",
-            "(Landroid/os/Handler; Ljava/lang/String;)V",
-        )[0]
-
-        expect_method = MethodObject(
-            "Ljava/lang/StringBuilder;",
-            "append",
-            "(Ljava/lang/String;)Ljava/lang/StringBuilder;",
-        )
-        expect_offset = 42
-
-        upper_methods = apkinfo.lowerfunc(method)
-
-        assert (expect_method, expect_offset) in upper_methods
-
     def test_get_method_bytecode(self, apkinfo2):
         apkinfo = apkinfo2
         expected_bytecode_list = [
@@ -385,22 +366,38 @@ class TestApkinfo:
 
     def test_lowerfunc(self, apkinfo2):
         apkinfo = apkinfo2
-        method = apkinfo.find_method(
+        method1 = apkinfo.find_method(
             "Lcom/example/google/service/SMSReceiver;",
             "isContact",
             "(Ljava/lang/String;)Ljava/lang/Boolean;",
         )[0]
 
-        expect_method = apkinfo.find_method(
+        expect_method1 = apkinfo.find_method(
             "Lcom/example/google/service/ContactsHelper;",
             "<init>",
             "(Landroid/content/Context;)V",
         )[0]
-        expect_offset = 10
+        expect_offset1 = 10
 
-        upper_methods = apkinfo.lowerfunc(method)
+        upper_methods1 = apkinfo.lowerfunc(method1)
 
-        assert (expect_method, expect_offset) in upper_methods
+        method2 = apkinfo.find_method(
+            "Lcom/example/google/service/WebServiceCalling;",
+            "Send",
+            "(Landroid/os/Handler; Ljava/lang/String;)V",
+        )[0]
+
+        expect_method2 = MethodObject(
+            "Ljava/lang/StringBuilder;",
+            "append",
+            "(Ljava/lang/String;)Ljava/lang/StringBuilder;",
+        )
+        expect_offset2 = 42
+
+        upper_methods2 = apkinfo.lowerfunc(method2)
+
+        assert (expect_method1, expect_offset1) in upper_methods1
+        assert (expect_method2, expect_offset2) in upper_methods2
 
     def test_superclass_relationships_with_expected_class(self, apkinfo):
         expected_upper_class = {"Lcom/example/google/service/HttpHelper;"}
