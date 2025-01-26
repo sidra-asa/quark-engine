@@ -51,6 +51,16 @@ jobs:
       run: |
         pip install git+https://github.com/Fare9/Shuriken-Analyzer.git@80443a369b6f0db6f3fd523fd0c0c4efcd64e2d5#subdirectory=shuriken/bindings/Python/
       if: matrix.os == 'macos-13'
+    
+    - name: Install Shuriken-Analyzer for Windows
+      run: |
+        git clone https://github.com/Fare9/Shuriken-Analyzer.git
+        cd Shuriken-Analyzer
+        cmake -S . -B build/ -DCMAKE_BUILD_TYPE=Release -DGITHUB_ACTION=ON -DDEX_TESTS=ON
+        cmake --build build/ --config Release 
+        cmake --install build/ --config Release --prefix "C:/Program Files (x86)/Shuriken"
+        cd -
+      if: matrix.os == 'windows-latest'
 
     - name: Install MacPorts
       uses: melusina-org/setup-macports@v1
