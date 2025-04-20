@@ -56,6 +56,10 @@ jobs:
       uses: melusina-org/setup-macports@v1
       if: matrix.os == 'macos-13'
 
+    - name: Install MacPorts
+      uses: melusina-org/setup-macports@v1
+      if: matrix.os == 'macos-13'
+
     - run: sudo apt-get -y install graphviz
       if: matrix.os == 'ubuntu-latest'
     - run: sudo port install graphviz
