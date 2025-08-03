@@ -13,7 +13,7 @@ sphinx-rtd-theme = "*"
 prettytable = "<=2.4.0"
 tqdm = "<=4.66.5"
 colorama = "<=0.4.4"
-quark-engine = {editable = true,path = "."}
+quark-engine = {file = ".", editable = true}
 click = "<=8.1.7"
 androguard = "==3.4.0a1"
 graphviz = "<=0.18.2"
